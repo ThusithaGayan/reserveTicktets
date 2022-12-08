@@ -1,12 +1,12 @@
 package com.atlink.reservetickets.services;
 
+import com.atlink.reservetickets.dtos.AvailabilityResponse;
 import com.atlink.reservetickets.dtos.ReserveSeatsResponse;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import static org.testng.Assert.*;
 
@@ -18,40 +18,48 @@ public class ReservationServiceTest {
     ReservationService reservationService = new ReservationService();
 
     @Test
-    public void testCoveredRoutesByJourney() {
-        ArrayList<String> arrayList = new ArrayList<>();
-        arrayList.add("AB");
-        arrayList.add("BC");
-        Assert.assertEquals(arrayList, reservationService.coveredRoutesByJourney('A', 'C'));
-    }
-
-    @Test
-    public void testCoveredRoutesByJourney_whenReturnJourney() {
-        ArrayList<String> arrayList = new ArrayList<>();
-        arrayList.add("DC");
-        arrayList.add("CB");
-        Assert.assertEquals(arrayList, reservationService.coveredRoutesByJourney('D', 'B'));
-    }
-
-    @Test
-    public void testCalculatePrice_WhenGoesAtoB() {
-        Assert.assertEquals(150d, reservationService.calculatePrice("A", "B", 3));
-    }
-
-    @Test
-    public void testCheckAvailability_whenRequiredSeatsGreaterThanAvailableSeats() {
-        assertFalse(reservationService.checkAvailability('A', 'B', 41));
-    }
-
-    @Test
-    public void testCheckAvailability_whenRequiredSeatsLessThanAvailableSeats() {
-        assertTrue(reservationService.checkAvailability('A', 'B', 30));
-    }
-
-    @Test
     public void testReserveTickets_whenSeatsNotAvailable() {
-        assertEquals(ReserveSeatsResponse.builder().reserved(false).from("A").to("B").build(), reservationService.reserveTickets('A', 'B', 41, 150d));
+        assertEquals(reservationService.reserveTickets('A', 'B', 41), ReserveSeatsResponse.builder().reserved(false).from("A").to("B").build());
 
     }
 
+    @Test
+    public void testReserveTickets_whenSeatsAvailable() {
+        ReserveSeatsResponse reserveSeatsResponse = reservationService.reserveTickets('A', 'C', 5);
+        assertTrue(reserveSeatsResponse.isReserved());
+        assertNotNull(reserveSeatsResponse.getSeatsId());
+        assertNotNull(reserveSeatsResponse.getReservedTime());
+        assertNotNull(reserveSeatsResponse.getTicketId());
+        assertEquals(reserveSeatsResponse.getFrom(), "A");
+        assertEquals(reserveSeatsResponse.getTo(), "C");
+        assertEquals(reserveSeatsResponse.getTotalPrice(), 500d);
+    }
+
+    @Test
+    public void testReserveTickets_whenBtoCBookedSeatsBookedAtoB_thenVerifyBtoCBookedSeatAvailableForAtoB() {
+        List<String> bcReserved = reservationService.reserveTickets('B', 'C', 5).getSeatsId();
+        List<String> abReserved = reservationService.reserveTickets('A', 'B', 5).getSeatsId();
+        assertEquals(abReserved, bcReserved);
+
+    }
+
+    @Test
+    public void testGetAvailabilityResponse_whenSeatsAvailable_thenVerifyExpectedValue() {
+        AvailabilityResponse availabilityResponse = reservationService.getAvailabilityResponse("A", "C", 4);
+        assertTrue(availabilityResponse.isAvailability());
+        assertEquals(availabilityResponse.getFrom(), "A");
+        assertEquals(availabilityResponse.getTo(), "C");
+        assertEquals(availabilityResponse.getPrice(), 400d);
+        assertEquals(availabilityResponse.getNumberOfRequestedSeats(), 4);
+    }
+
+    @Test
+    public void testGetAvailabilityResponse_whenSeatsAvailableAndReturnJourney_thenVerifyExpectedValue() {
+        AvailabilityResponse availabilityResponse = reservationService.getAvailabilityResponse("D", "B", 4);
+        assertTrue(availabilityResponse.isAvailability());
+        assertEquals(availabilityResponse.getFrom(), "D");
+        assertEquals(availabilityResponse.getTo(), "B");
+        assertEquals(availabilityResponse.getPrice(), 400d);
+        assertEquals(availabilityResponse.getNumberOfRequestedSeats(), 4);
+    }
 }

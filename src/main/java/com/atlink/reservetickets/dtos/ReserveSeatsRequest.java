@@ -9,16 +9,6 @@ public class ReserveSeatsRequest {
     private String to;
     private int numberOfSeats;
 
-    private double price;
-
-    public double getPrice() {
-        return price;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
     public ReserveSeatsRequest() {
     }
 
@@ -26,7 +16,6 @@ public class ReserveSeatsRequest {
         this.from = from;
         this.to = to;
         this.numberOfSeats = numberOfSeats;
-        this.price = price;
     }
 
     public String getFrom() {

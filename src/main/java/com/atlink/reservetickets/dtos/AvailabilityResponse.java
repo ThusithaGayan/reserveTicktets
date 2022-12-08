@@ -12,11 +12,10 @@ public class AvailabilityResponse {
     private boolean availability;
     private double price;
     private int numberOfRequestedSeats;
-    private int numberOfAvailableSeats;
+
 
     private AvailabilityResponse(SeatsAvailabilityResponseBuilder seatsAvailabilityResponseBuilder) {
         this.availability = seatsAvailabilityResponseBuilder.availability;
-        this.numberOfAvailableSeats = seatsAvailabilityResponseBuilder.numberOfAvailableSeats;
         this.numberOfRequestedSeats = seatsAvailabilityResponseBuilder.numberOfRequestedSeats;
         this.from = seatsAvailabilityResponseBuilder.from;
         this.to = seatsAvailabilityResponseBuilder.to;
@@ -41,10 +40,6 @@ public class AvailabilityResponse {
 
     public int getNumberOfRequestedSeats() {
         return numberOfRequestedSeats;
-    }
-
-    public int getNumberOfAvailableSeats() {
-        return numberOfAvailableSeats;
     }
 
     public static class SeatsAvailabilityResponseBuilder {
@@ -77,11 +72,6 @@ public class AvailabilityResponse {
 
         public SeatsAvailabilityResponseBuilder numberOfRequestedSeats(int numberOfRequestedSeats) {
             this.numberOfRequestedSeats = numberOfRequestedSeats;
-            return this;
-        }
-
-        public SeatsAvailabilityResponseBuilder numberOfAvailableSeats(int numberOfAvailableSeats) {
-            this.numberOfAvailableSeats = numberOfAvailableSeats;
             return this;
         }
 

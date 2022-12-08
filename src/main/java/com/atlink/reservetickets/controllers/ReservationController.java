@@ -24,13 +24,13 @@ public class ReservationController {
     @GetMapping("/check")
     public ResponseEntity<AvailabilityResponse> checkAvailableSeats(@RequestParam @Validated String from, @RequestParam @Validated String to, @RequestParam @Validated int numberOfSeats) {
 
-        AvailabilityResponse seatsAvailabilityResponse = reservationService.getAvailabilityResponse(from, to, numberOfSeats);
+        AvailabilityResponse seatsAvailabilityResponse = reservationService.getAvailabilityResponse(from.toUpperCase(), to.toUpperCase(), numberOfSeats);
         return new ResponseEntity<>(seatsAvailabilityResponse, HttpStatus.OK);
     }
 
     @PostMapping("/reserve")
     public ResponseEntity<ReserveSeatsResponse> reserveSeats(@RequestBody @Validated ReserveSeatsRequest reserveSeatsRequest) {
-        ReserveSeatsResponse reserveSeatsResponse = reservationService.reserveTickets(reserveSeatsRequest.getFrom().charAt(0), reserveSeatsRequest.getTo().charAt(0), reserveSeatsRequest.getNumberOfSeats(), reserveSeatsRequest.getPrice());
+        ReserveSeatsResponse reserveSeatsResponse = reservationService.reserveTickets(reserveSeatsRequest.getFrom().toUpperCase().charAt(0), reserveSeatsRequest.getTo().toUpperCase().charAt(0), reserveSeatsRequest.getNumberOfSeats());
 
         if (reserveSeatsResponse.isReserved()) {
             return new ResponseEntity<>(reserveSeatsResponse, HttpStatus.CREATED);

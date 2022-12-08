@@ -17,12 +17,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ReservationService {
-    ConcurrentHashMap<String, String[]> destinationPointReserve = new ConcurrentHashMap<>();
-    HashMap<String, Double> pointToPointPrice = new HashMap<>();
+    private ConcurrentHashMap<String, String[]> destinationPointReserve = new ConcurrentHashMap<>();
+    private HashMap<String, Double> pointToPointPrice = new HashMap<>();
 
-    private final String[] seatsIDs = new String[]{"1A", "1B", "1C", "1D", "2A", "2B", "2C", "2D", "3A", "3B", "3C", "3D", "4A", "4B", "4C", "4D", "5A", "5B", "5C", "5D", "6A", "6B", "6C", "6D", "7A", "7B", "7C", "7D", "8A", "8B", "8C", "8D", "9A", "9B", "9C", "9D", "10A", "10B", "10C", "10D"};
+    private final String[] seatsIds = new String[]{"1A", "1B", "1C", "1D", "2A", "2B", "2C", "2D", "3A", "3B", "3C", "3D", "4A", "4B", "4C", "4D", "5A", "5B", "5C", "5D", "6A", "6B", "6C", "6D", "7A", "7B", "7C", "7D", "8A", "8B", "8C", "8D", "9A", "9B", "9C", "9D", "10A", "10B", "10C", "10D"};
 
-    private int availableSeats;
 
     public ReservationService() {
         destinationPointReserve.put("AB", new String[40]);
@@ -38,6 +37,12 @@ public class ReservationService {
         pointToPointPrice.put("BC", 50d);
         pointToPointPrice.put("BD", 100d);
         pointToPointPrice.put("CD", 50d);
+        pointToPointPrice.put("BA", 50d);
+        pointToPointPrice.put("CA", 100d);
+        pointToPointPrice.put("DA", 150d);
+        pointToPointPrice.put("CB", 50d);
+        pointToPointPrice.put("DB", 100d);
+        pointToPointPrice.put("DC", 50d);
     }
 
     /**
@@ -47,7 +52,7 @@ public class ReservationService {
      * we have to identify route to the destination
      * eg:-If journey start from-A to C it goes through A->B,B->C
      */
-    public ArrayList<String> coveredRoutesByJourney(char from, char to) {
+    private ArrayList<String> coveredRoutesByJourney(char from, char to) {
         ArrayList<String> routeToDestination = new ArrayList<>();
         if (from < to) {
             for (int i = from; i < to; i++) {
@@ -68,16 +73,9 @@ public class ReservationService {
      * @param numOfSeats number of required seats
      * @return total tickets price for the destination
      */
-    public double calculatePrice(String from, String to, int numOfSeats) {
+    private double calculatePrice(String from, String to, int numOfSeats) {
         String pointToPoint = from + to;
         return pointToPointPrice.get(pointToPoint) * numOfSeats;
-    }
-
-    /**
-     * @return available seats count given destination
-     */
-    public int getAvailableSeatsCount() {
-        return availableSeats;
     }
 
 
@@ -87,7 +85,7 @@ public class ReservationService {
      * @param numOfSeats number of required seats
      * @return boolean value if available return true otherwise false
      */
-    public boolean checkAvailability(char from, char to, int numOfSeats) {
+    private boolean checkAvailability(char from, char to, int numOfSeats) {
         String[] routesToDestination = coveredRoutesByJourney(from, to).toArray(new String[0]);
         int availableSeatsForGivenDestination = 0;
         boolean availability = false;
@@ -108,7 +106,6 @@ public class ReservationService {
         //variable availableSeats stand for SeatsAvailabilityResponse it includes the  number of seats available
         if (availableSeatsForGivenDestination >= numOfSeats) {
             availability = true;
-            availableSeats = availableSeatsForGivenDestination;
         }
         return availability;
     }
@@ -120,11 +117,10 @@ public class ReservationService {
      * @param from          journey from
      * @param to            journey to
      * @param requiredSeats required seats
-     * @param price         total amount
      * @return details of reserved seats
      */
-    public synchronized ReserveSeatsResponse reserveTickets(char from, char to, int requiredSeats, double price) {
-        Set<String> seatsId = new HashSet<>();
+    public synchronized ReserveSeatsResponse reserveTickets(char from, char to, int requiredSeats) {
+        Set<String> bookedSeatsIds = new HashSet<>();
         String[] routesToDestination = coveredRoutesByJourney(from, to).toArray(new String[0]);
         int availableSeatsForGivenDestination = 0;
         if (checkAvailability(from, to, requiredSeats)) {
@@ -143,7 +139,7 @@ public class ReservationService {
                     }
 
                 }
-                //check seat availability till destination and booked the seat no need to worry because we already check availability of seats
+                //check seat availability till destination
                 if (seatAvailablePeriodForGivenRoutes == routesToDestination.length) {
                     availableSeatsForGivenDestination++;
 
@@ -152,7 +148,7 @@ public class ReservationService {
                         String[] seatsForRoute = destinationPointReserve.get(route);
                         //assigned the ticketId for given seats index
                         seatsForRoute[seatIndex] = ticketId;
-                        seatsId.add(seatsIDs[seatIndex]);
+                        bookedSeatsIds.add(seatsIds[seatIndex]);
                         destinationPointReserve.put(route, seatsForRoute);
                     }
                 }
@@ -160,8 +156,8 @@ public class ReservationService {
                 if (availableSeatsForGivenDestination == requiredSeats) {
                     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
                     LocalDateTime now = LocalDateTime.now();
-
-                    return ReserveSeatsResponse.builder().reserved(true).from(String.valueOf(from)).to(String.valueOf(to)).seatsId(seatsId.stream().sorted().toList()).ticketId(ticketId).reservedTime(dtf.format(now)).totalPrice(price).build();
+                    double price = calculatePrice(String.valueOf(from), String.valueOf(to), requiredSeats);
+                    return ReserveSeatsResponse.builder().reserved(true).from(String.valueOf(from)).to(String.valueOf(to)).seatsId(bookedSeatsIds.stream().sorted().toList()).ticketId(ticketId).reservedTime(dtf.format(now)).totalPrice(price).build();
                 }
 
 
@@ -171,16 +167,6 @@ public class ReservationService {
         return ReserveSeatsResponse.builder().reserved(false).from(String.valueOf(from)).to(String.valueOf(to)).build();
     }
 
-    public void print() {
-        for (Map.Entry<String, String[]> set : destinationPointReserve.entrySet()) {
-            System.out.println(set.getKey());
-            System.out.println("-------->>>>>");
-            for (int i = 0; i < set.getValue().length; i++) {
-                System.out.print(set.getValue()[i] + " ");
-            }
-            System.out.println("-------->>>>>");
-        }
-    }
 
     /**
      * @param from       journey from
@@ -191,8 +177,7 @@ public class ReservationService {
     public AvailabilityResponse getAvailabilityResponse(String from, String to, int numOfSeats) {
         boolean availability = checkAvailability(from.charAt(0), to.charAt(0), numOfSeats);
         double price = calculatePrice(from, to, numOfSeats);
-        int availableSeats = getAvailableSeatsCount();
-        return new AvailabilityResponse.SeatsAvailabilityResponseBuilder().availability(availability).from(from).to(to).numberOfRequestedSeats(numOfSeats).price(price).numberOfAvailableSeats(availableSeats).build();
+        return new AvailabilityResponse.SeatsAvailabilityResponseBuilder().availability(availability).from(from).to(to).numberOfRequestedSeats(numOfSeats).price(price).build();
     }
 
 }
