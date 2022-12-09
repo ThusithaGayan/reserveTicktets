@@ -2,6 +2,7 @@ package com.atlink.reservetickets.services;
 
 import com.atlink.reservetickets.dtos.AvailabilityResponse;
 import com.atlink.reservetickets.dtos.ReserveSeatsResponse;
+import com.atlink.reservetickets.exception.InvalidRequestException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -53,6 +54,11 @@ public class ReservationService {
      * eg:-If journey start from-A to C it goes through A->B,B->C
      */
     private ArrayList<String> coveredRoutesByJourney(char from, char to) {
+
+        if (!Character.isAlphabetic(from) || !Character.isAlphabetic(to)) {
+            throw new InvalidRequestException("Invalid Destination");
+        }
+
         ArrayList<String> routeToDestination = new ArrayList<>();
         if (from < to) {
             for (int i = from; i < to; i++) {
